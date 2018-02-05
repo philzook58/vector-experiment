@@ -122,6 +122,12 @@ fillRange = tabulate (\x -> (fromEnum x))
 diag :: Semiring a => Free VecF a -> Free MatF a
 diag (VBlock x y) = MBlock (diag x) zero zero (diag y)
 -}
+
+class Profunctor p <= Prorepresentable p g f | p -> f g where
+   ditabulate :: forall a b. (g a -> f g) -> p a b
+   diindex :: forall a b. p a b -> (g a -> f g)
+
+
 {-
       -- This is apparently not the correct notion of prorepresentable
 class Profunctor p <= Prorepresentable p a b | p -> a b where

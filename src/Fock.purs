@@ -1,12 +1,12 @@
 module Fock where
 
+import Control.Comonad.Cofree
+import Data.Functor.Compose
+import Data.Functor.Product
+import Data.Lazy
 import Vec
 
-import Data.Lazy
-
-import Data.Functor.Product
-import Data.Functor.Compose
-import Control.Comonad.Cofree
+import Control.Comonad.Traced (listen)
 
 
 data Stream a = Cons' a (Lazy (Stream a))
@@ -80,4 +80,24 @@ type PowSum = Product
 -- There are two sums? One at Functor level, the other at value level?
 -- data FreeHelper ff f g gg a = ((ff + gg) a) (FreeHelper (compose f ff)    a | Pure?
 --- maybe I'm not making any sense.
+
+
+
+
+-- functiony list
+-- occurred during investiagtion into multivariable power series
+-- basically CoFree with a representably functor
+-- Make it Lazy btw
+-- but also Identical with the Consumer coroutine.
+data FunctionyStream a b = Consy b (a -> (FunctionyStream a b)) 
+
+
+
+
+
+
+
+
+
+
 
