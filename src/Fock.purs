@@ -6,6 +6,7 @@ import Data.Lazy
 
 import Data.Functor.Product
 import Data.Functor.Compose
+import Control.Comonad.Cofree
 
 
 data Stream a = Cons' a (Lazy (Stream a))
@@ -14,6 +15,11 @@ data Stream a = Cons' a (Lazy (Stream a))
 -- Free f a ~ a + f a + f f a + f f f a + ...
 -- Thus has to be lazy 
 data FreeTimes f a = FreeTimes a (Lazy (FreeTimes f (f a)))
+-- By analogy with Free, is there a CPS version?
+-- Is this in some sense the dual of free? 
+-- motherfucker. This is the cofree comonad.
+
+type Fock' v = Cofree v Number
 
 
 -- The Product type of two vectors is their directsum. The kron is their functor composition
@@ -63,3 +69,15 @@ type PowSum = Product
 
 -- equating somehow f g and g f ... symmettric particles
 -- BosonProd f g ~ (f g , g f)
+
+
+-- The free monad has an interesting notion of sum
+-- You of course can just sum the resulting functor
+-- but what about 
+-- interleaving and collecting.
+-- 1 + (f+g) (ff+gg) + (fff + ggg) + ...
+-- (1 + f + ff + ..)+(1 + g + gg + ...) -> (interleaved)
+-- There are two sums? One at Functor level, the other at value level?
+-- data FreeHelper ff f g gg a = ((ff + gg) a) (FreeHelper (compose f ff)    a | Pure?
+--- maybe I'm not making any sense.
+

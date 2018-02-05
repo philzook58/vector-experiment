@@ -18,11 +18,17 @@ import Control.Category (compose)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.CommutativeRing (zero)
-import Data.Enum (cardinality)
+import Data.Enum
 
 import Data.Bifunctor
 import Data.Functor.Product
 import Data.Functor.Compose
+import Data.Functor.Coproduct
+import Data.Profunctor
+
+import Control.Monad.Free
+import Partial.Unsafe (unsafePartial)
+import Data.Foldable (sum)
 --data Mat = MBlock Mat Mat Mat Mat | MNum Number
 
 -- implementation makes assumtion that matrix is NxN of vector size
@@ -31,8 +37,111 @@ foreign import matVecArr :: forall x. (Sized x) => (AVec (Tuple x x) Number) -> 
 -- only powers of 2.
 data MatF a = MBlock a a a a
 data VecF a = VBlock a a
+
+instance showVecF :: Show a => Show (VecF a) where
+   show (VBlock x y) = "V2 " <> show x <> " " <> show y
 -- VecF is the functor vector form of spin
 type Spin a = VecF a
+-- MatF is a terrible name
+type BinVec a = VecF a
+
+type V2 a = VecF a
+type V4 a = Compose VecF VecF a
+type V8 a = V4 (VecF a)
+type V16 a = V8 (VecF a)
+type V32 a = V16 (VecF a)
+type V64 a = V32 (VecF a)
+type V128 a = V64 (VecF a)
+type V256 a = V128 (VecF a)
+type V512 a = V256 (VecF a)
+type V1024 a = V512 (VecF a)
+type V2046 a = V1024 (VecF a)
+
+type M2 a = MatF a
+type M4 a = M2 (MatF a)
+type M8 a = M4 (MatF a)
+type M16 a = M8 (VecF a)
+type M32 a = M16 (MatF a)
+type M64 a = M32 (MatF a)
+type M128 a = M64 (MatF a)
+type M256 a = M128 (MatF a)
+type M512 a = M256 (MatF a)
+type M1024 a = M512 (MatF a)
+type M2046 a = M1024 (MatF a)
+
+type I2 = Boolean
+type I4 = Tuple Boolean I2
+type I8 = Tuple Boolean I4
+type I16 = Tuple Boolean I8
+type I32 = Tuple Boolean I16
+type I64 = Tuple Boolean I32
+type I128 = Tuple Boolean I64
+type I256 = Tuple Boolean I128
+type I512 = Tuple Boolean I256
+type I1024 = Tuple Boolean I512
+type I2046 = Tuple Boolean I1024
+
+
+-- Can get values of this type using toEnum
+-- and fromEnum
+
+type FreeVec a = Free VecF a
+type FreeMat a = Free MatF a
+
+{-
+--warmup
+-- okay this is the fold...
+sumV :: SemiRing a => FreeVec a -> a
+sumV 
+-}
+
+
+
+class Functor f <= Representable f a | f -> a where
+   tabulate :: forall b. (a -> b) -> f b
+   index :: forall b. f b -> (a -> b)
+
+instance fVec :: Functor VecF where
+   map f (VBlock x y) = VBlock (f x) (f y)
+
+instance vefFRep :: Representable VecF Boolean where
+   tabulate f = VBlock (f false) (f true)
+   index (VBlock x y) t = if t then y else x
+
+instance repCompose :: (Representable f a, Representable g b) => Representable (Compose f g) (Tuple a b) where
+   tabulate = Compose <<< tabulate <<< map tabulate <<< curry
+   index (Compose fg) (Tuple i j) = index (index fg i) j
+
+
+fillRange :: forall f a. BoundedEnum a => Representable f a => f Int
+fillRange = tabulate (\x -> (fromEnum x))
+
+
+{-
+-- Need a Diag Class
+diag :: Semiring a => Free VecF a -> Free MatF a
+diag (VBlock x y) = MBlock (diag x) zero zero (diag y)
+-}
+{-
+      -- This is apparently not the correct notion of prorepresentable
+class Profunctor p <= Prorepresentable p a b | p -> a b where
+   ditabulate :: forall s t. ((a -> t) -> b -> s) -> p t s
+   diindex :: forall s t. p t s -> ((a -> t) -> b -> s)
+
+newtype StarCoStar f a b = SCS (f a -> f b)
+
+
+instance profunctorscs :: Functor f => Profunctor (StarCoStar f) where
+   dimap f g (SCS h) = SCS $ (map f) >>> h >>> (map g)
+
+instance prorespesentableStarCoStar :: Representable f a => Prorepresentable (StarCoStar f) a a where
+   ditabulate =
+   diindex = 
+-}
+-- forall p. Prorepresentable p => p s t -> p a b 
+
+-- RepresetnableProfunctor
+-- ProRepresentable
 -- VecF ~ Kron (Bool->Number) 
 
 -- One possible solution: Prime Factorization of dimension (use 3x3,5x5 and so on block matrix) How to autogenerate these types? Could do with type families
@@ -59,7 +168,7 @@ data MatF'' a d = MBlock'' a (d -> a) (a -> d) d
 -- which you could take the Svd of.
 -- This is silly. We can't possibly build a Ring instance for this
 
-data MatF''' a d w v= MBlock''' a (v -> w) (w -> v) d
+data MatF''' a d w v = MBlock''' a (v -> w) (w -> v) d
 -- store recyangular matrices as LinOps, have to convert and deconvert a and d in order to compose
 -- unless we define a new matrix composition
 
@@ -116,6 +225,10 @@ instance aV :: Apply (AVec n) where
 
 instance a2V :: Sized n => Applicative (AVec n) where
    pure x = AVec (replicate (size (Proxy :: Proxy n)) x)
+{-
+instance a2V :: BoundedEnum n => Applicative (AVec n) where
+   pure x = AVec (replicate (unwrap (cardinality :: Cardinality n)) x)
+-}
 
 class Sized x where
    size :: Proxy x -> Int
@@ -152,13 +265,26 @@ instance maybeSize :: (Sized a) => Sized (Maybe a) where
 castVec :: forall n a b. Sized a => Sized b => AVec a n -> Maybe (AVec b n)
 castVec (AVec x) = if (size (Proxy :: Proxy a)) == (size (Proxy :: Proxy b)) then Just (AVec x) else Nothing
 
-{-
-class Metric v n where
-metric :: v -> v -> n
+--class Metric f n where
+class Metric f where
+  dot :: forall a. Semiring a => f a -> f a -> a
 
-instance (BoundedEnum a, Semiring n) =>  Metric (Vec a n) n where
-metric v w = map
 
+
+
+instance metricenumVec :: BoundedEnum a => Metric ((->) a) where
+   dot v w = sum $ map (\x ->  (v x) * (w x)) basis
+
+
+
+
+basis :: forall a. BoundedEnum a => Array a
+basis = unsafePartial $ map (fromJust <<< toEnum) (range 0 $ unwrap (cardinality :: Cardinality a))
+
+
+{-size' :: BoundedEnum a => Proxy a -> Int
+size' _ = case cardinality of
+               Cardinality x -> x 
 -}
 {-
 instance aVecSize :: Sized b => Sized (AVec b a) where
@@ -171,11 +297,17 @@ size _ = 2 * (size (Proxy :: Proxy a) )
 -}
 
 instance semiringAVec :: (Semiring a, Sized x) => Semiring (AVec x a) where
-   add x y = add <$> x <*> y
+   add (AVec x) (AVec y) = AVec $ zipWith add x y
    zero = pure zero
-   mul x y = mul <$> x <*> y
+   mul (AVec x) (AVec y) = AVec $ zipWith mul x y
    one = pure one
-
+{-
+instance semiringBoundedEnumAVec :: (Semiring a, BoundedEnum x) => Semiring (AVec x a) where
+   add (AVec x) (AVec y) = AVec $ zipWith add x y
+   zero = pure zero
+   mul (AVec x) (AVec y) = AVec $ zipWith mul x y
+   one = pure one
+-}
 instance matVecAVec :: (Sized x) => MatVec (AVec (Tuple x x) Number) (AVec x Number) where
    matvec = matVecArr
 
@@ -255,7 +387,8 @@ instance bifunnctorDSum :: Bifunctor DSum where
 --newtype DSum a b = DSum (Tuple a b)
 -- newtype DSum a b = DSum (Tuple a b)
 
--- should use Sequence, not array. Or List.
+-- should use Sequence, not array. Or List. Or Cat-List?
+-- every addition does full copy
 -- This is weird. DSum is basically tuple. We actually gain a couple things by using DSum here though.
 -- It turns out it makes not so much sense to Kron with a scalar in there?
 -- This Kron is in some sense "Free"
