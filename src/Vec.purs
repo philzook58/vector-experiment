@@ -696,3 +696,6 @@ plus _ _ = VNum 0.0
 -}
 --inv :: Mat -> Mat
 
+
+
+

@@ -5,7 +5,7 @@ module Algos where
 import Vec
 import Prelude
 -- Iterative algorithms
-
+import Data.List.Lazy
 
 --
 
@@ -71,6 +71,6 @@ instance divExpr :: DivisionRing Expr where
 -- Times is juxtaposiotion
 -- Plus is a literal + picture
 
-
+powermethodstep a v = a * v 
 
 

@@ -43,3 +43,11 @@ instance linearMonad :: Semigroup b => Monad (Kron b) where
    bind x f = 
 
 -}
+
+
+type KronOp a = KronOp (Kron (Vec a Number) (Dual (Vec a Number) Number))
+
+instance kronOpmatvec :: MatVec (Kron (Vec a Number) (Dual (Vec a Number) Number)) (Vec a Number) where
+   matvec (Kron l) v = sum $ map (\x -> case x of
+   								        DSum w dw -> map (\s -> s * (dw v)) w) l
+
