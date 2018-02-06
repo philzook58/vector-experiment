@@ -1,0 +1,8 @@
+{
+  "name": "purescript-vector",
+  "files": [],
+  "peerDependencies": {},
+  "dependencies": {
+    "ndarray": "^1.0.18"
+  }
+}

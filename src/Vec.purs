@@ -25,6 +25,7 @@ import Data.Functor.Product
 import Data.Functor.Compose
 import Data.Functor.Coproduct
 import Data.Profunctor
+import Data.Functor.Invariant
 
 import Control.Monad.Free
 import Partial.Unsafe (unsafePartial)
@@ -124,8 +125,21 @@ diag (VBlock x y) = MBlock (diag x) zero zero (diag y)
 -}
 
 class Profunctor p <= Prorepresentable p g f | p -> f g where
-   ditabulate :: forall a b. (g a -> f g) -> p a b
-   diindex :: forall a b. p a b -> (g a -> f g)
+   ditabulate :: forall a b. (g a -> f b) -> p a b
+   diindex :: forall a b. p a b -> (g a -> f b)
+
+class Invariant p <= Invrepresentable p g f | p -> f g where
+  itabulate :: forall a. (g a -> f a) -> p a 
+  iindex :: forall a. p a -> (g a -> f a)  
+
+-- You'd Have to use Compose, but I've said this before haven't I
+instance Invrepresentable p g f, Invrepresentable q h j => Invrepresentable (Compose p q) (Compose g h) (Compose f j) where
+
+
+instance Invrepresentable M2 V2 V2 where
+   iitabulate = 
+
+
 
 
 {-
