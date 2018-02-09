@@ -74,3 +74,22 @@ instance divExpr :: DivisionRing Expr where
 powermethodstep a v = a * v 
 
 
+
+class GaussSeidel f where
+  gsSeries :: forall a. f a -> List (f a) -- DivisionRing a? a is Number only? GaussSeidel a?
+
+-- maybe let
+--instance DivisionRing a => GaussSeidel a where
+-- gsSeries x = repeat (recip x)
+
+instance GaussSeidel a => GaussSeidel (M2 a) where
+ gsSeries (M2 a b c d) = Cons  where
+                               s1 = 
+
+
+
+instance GaussSeidel a => GaussSeidel (Triangular'' a) where
+ gsSeries (Tri' a b c d) = 
+
+
+

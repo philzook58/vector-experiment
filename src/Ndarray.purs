@@ -1,6 +1,8 @@
 module Ndarray where
 import Data.ArrayBuffer.Types
 
+{-
+
 foreign import data Ndarray :: Type -> Type
 
 foreign import fill :: Float64 -> Int -> NDarray Float64
@@ -22,7 +24,7 @@ foreign import ndarray :: Array -> NDArray
 -- perhaps a typeclass? Array Array Array -> NDArray also
 
 -- slices as foreign imported lens
-
+-}
 
 
 

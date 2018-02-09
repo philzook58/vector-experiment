@@ -131,7 +131,7 @@ class Profunctor p <= Prorepresentable p g f | p -> f g where
 class Invariant p <= Invrepresentable p g f | p -> f g where
   itabulate :: forall a. (g a -> f a) -> p a 
   iindex :: forall a. p a -> (g a -> f a)  
-
+{-
 -- You'd Have to use Compose, but I've said this before haven't I
 instance Invrepresentable p g f, Invrepresentable q h j => Invrepresentable (Compose p q) (Compose g h) (Compose f j) where
 
@@ -139,7 +139,7 @@ instance Invrepresentable p g f, Invrepresentable q h j => Invrepresentable (Com
 instance Invrepresentable M2 V2 V2 where
    iitabulate = 
 
-
+-}
 
 
 {-
@@ -569,10 +569,58 @@ data LowRank a b = LowRank a (LinOp b b)
 
 -- a notion of banded need a 4x4 block matrix with just zeros at the corners
 -- which means 
+-- No, you can totally have a banded matrix with 3x3
 --data Banded a b c d e = Banded a b c d e
 -- Just some thoughts. This is back into ordinary data type programming.
 data Triangular = Blocked Triangular Dense Triangular | Scalar Number
+data Triangular' t d = Tri t d t -- Free Triangular?
+data Triangular'' a = Tri' a a a -- Only triangular at the block level.
+data Banded a = Banded a a -- only a and d
+
+{-
+instance DivisionRing a -> DivsionRing (Tuple (Tri a)
+-}
 type Dense = Array (Array Number)
+data Zero = Zero
+
+-- Triangular + Diag is closed under product inverse and addition
+
+-- Both of these are useful for 
+
+{-
+class TriangularProj f g where
+   uppertri :: f a -> Tri a -- g a
+   lowertri :: f a -> Tri a
+   decompose :: f a -> Tuple (Tri a) (Tri a)
+-}
+
+{-
+instance TriangularProj a t => TriangularProj M2 (Triangular' t) where
+   uppertri (M2 a b c d) = Tri (uppertri a) b (uppertri d)
+
+   -}
+
+-- use Free for recurive decomposition into triangular?
+-- 2x2 block matrix is also banded if we can enforce all of it's elements are triangular.
+
+-- The triangular and diagonal decompositions are defintely 
+
+{-
+class DiagonalProj f where
+   diag :: f a -> Tri a
+-}
+
+{-
+class Triangular a where
+   fastsolve :: a -> diag -> v -> v
+   -- or?
+   decompose :: ?
+-}
+-- banded  a b _ e f g _ i j  where blanks are zero matrices
+-- No, you can totally have a banded matrix with 3x3
+data Banded = Banded Banded     Triangular Zero
+                     Triangular Banded     Triangular
+                     Zero       Triangular Banded
 
 --data Triangular a b d = Triangular a b d
 
