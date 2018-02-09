@@ -49,6 +49,20 @@ type BoxFockOp' = FreeTimes (Kron (LinOp (Psi Number) (Psi Number))) (LinOp Numb
 
 --type DerivTower a = a -> (FreeTimes (Kron (LinOp (Vec a Number))) Number)
 
+  --powser implementation (f:ft) * gs@(g:gt) = f*g : ft*gs + series(f)*gt
+
+series f = FreeTimes f zero
+instance SemiRing a => SemiRing (FreeTimes f a) where
+   add (FreeTimes a g) (b f) = FreeTimes (a + b) (f + g)
+   zero = (FreeTimes zero zero)
+   mul (FreeTimes f ft) gs@(FreeTimes g gt) = FreeTimes (f * g) (ft * gs + (series f) * gt) 
+   one = FreeTimes one one
+
+-- The interesting bit is mul. Is this correct? ..... n! is concerning
+--  (f:ft) # gs@(0:gt) = f : gt*(ft#gs)
+powsercompose (FreeTimes f ft) gs@(FreeTimes zero gt) = FreeTimes f (gt * )
+
+-- multinomial power series.
 
 
 -- There is a natural product 
