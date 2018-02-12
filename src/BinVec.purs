@@ -6,6 +6,9 @@ import Vec
 import Data.Tuple
 import Data.Identity
 import Data.Newtype
+import Data.Int.Bits
+import Data.Maybe (fromMaybe)
+import Data.Enum
 
 data V2 a = V2 a a
 
@@ -40,12 +43,42 @@ instance representableM2 :: Representable M2 (Tuple Boolean Boolean) where
                                                    if col then y else x
 
 {-
-Int -> Int ->  Tuple Boolean Boolean
-zorder Tuple (Tuple false false) (zorder 
-zorder = if x < 2 and y < 2 then box else Tuple box (zorder (x << 2) (y << 2))
-                                          box = Tuple (toEnum x % 2) (toEnum y % 2) :: Tuple Boolean Boolean
 
+zorder :: Int -> Int ->  Tuple Boolean Boolean
+zorder x y = if (x < 2 && y < 2) then box else Tuple box (zorder (shl x 1) (shr y 1)) where
+                                          box = Tuple xbit ybit
+                                          xbit = fromMaybe false $ toEnum (mod x 2) 
+                                          ybit = fromMaybe false $ toEnum (mod y 2)
 -}
+intBit x = fromMaybe false $ toEnum (mod x 2)
+
+
+mK i j | i == j - 1 = -1
+mK i j | i == j + 1 = -1
+mK i j | i == j = 2
+mK _ _ = 0
+
+class ZOrder a where
+  zorder :: Int -> Int -> a
+  unzorder :: a -> Tuple Int Int
+
+instance recursiveZOrder :: ZOrder a => ZOrder (Tuple (Tuple Boolean Boolean) a) where
+   zorder x y = Tuple box (zorder (shr x 1) (shr y 1)) where
+                                          box = Tuple xbit ybit
+                                          xbit = intBit x
+                                          ybit = intBit y
+   unzorder (Tuple y@(Tuple a b) x) = Tuple (Tuple a i)  where
+                                                   Tuple i j = unzorder x
+
+
+instance baseZOrder :: ZOrder (Tuple Boolean Boolean) where
+   zorder x y = box where
+                  box = Tuple xbit ybit
+                  xbit = intBit y
+                  ybit = intBit x
+
+
+tabulate zorder
 {-
    class Invariant p <= Invrepresentable p g f | p -> f g where
   itabulate :: forall a. (g a -> f a) -> p a 
@@ -73,6 +106,7 @@ instance dualMetric :: Metric (Dual f) f Identity  where
   mtabulate f = Dual $ unwrap <<< f
 
 dot = mindex
+
 {-
 instance enumerableMetric :: (Representable f a, BoundedEnum a) => Metric f f Identity where
   mindex = Identity $ sum $ map (\x ->  (v x) * (w x)) basis
