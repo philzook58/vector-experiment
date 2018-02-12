@@ -73,7 +73,7 @@ instance divExpr :: DivisionRing Expr where
 
 powermethodstep a v = a * v 
 
-
+{-
 
 class GaussSeidel f where
   gsSeries :: forall a. f a -> List (f a) -- DivisionRing a? a is Number only? GaussSeidel a?
@@ -92,4 +92,4 @@ instance GaussSeidel a => GaussSeidel (Triangular'' a) where
  gsSeries (Tri' a b c d) = 
 
 
-
+-}

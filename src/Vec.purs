@@ -575,7 +575,7 @@ data LowRank a b = LowRank a (LinOp b b)
 data Triangular = Blocked Triangular Dense Triangular | Scalar Number
 data Triangular' t d = Tri t d t -- Free Triangular?
 data Triangular'' a = Tri' a a a -- Only triangular at the block level.
-data Banded a = Banded a a -- only a and d
+data Banded' a = Banded' a a -- only a and d
 
 {-
 instance DivisionRing a -> DivsionRing (Tuple (Tri a)
