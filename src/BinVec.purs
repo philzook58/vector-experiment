@@ -84,6 +84,7 @@ mK i j | i == j + 1 = -1
 mK i j | i == j = 2
 mK _ _ = 0
 
+-- https://graphics.stanford.edu/~seander/bithacks.html
 class ZOrder a where
   zorder :: Int -> Int -> a
   zorder :: (List Boolean) -> (List Boolean) -> a
@@ -100,6 +101,113 @@ instance recursiveZOrder :: ZOrder a => ZOrder (Tuple (Tuple Boolean Boolean) a)
                                                    j' = b
                                                    --multiplier = Cardinality a
 
+
+-- The FFT obviously prefers that we index with lowest bit first
+-- splitting blocks by even odd decopmpsition
+-- but it is useful for other things too.
+-- makes tridiagonal matrcies rescruisviyl triadiagonal
+-- makes triangular recursively triagnluar
+
+-- FFT suggests that perhaps circulant matrices are also block circulant.
+-- Looks like it
+
+-- one way to encode
+data M2' tag a = M2' a a a a 
+data Triangular
+data Banded
+-- or basically equvialently
+newtype Tri a = Tri (M2 a)
+-- Tri' for lower triangular?
+newtype Circ a = Circ (M2 a)
+-- Both cases have lots of obvious helpful boys
+-- circulant is described by a single vector
+-- diagonal blocks are identical
+-- off diagonal are weird manipulations of each other
+-- tridiagonal is half zeros. - Can be improved with Free
+-- banded is composed of banded
+
+
+-- I'm not positive I'm right still
+-- conjecture: one submatrix has zeros on the diagonals
+-- n^2/2 + n/2 is number of nonozero which ahs to be conserved
+-- 3 *(n^2/4/2 + n/2/2) + (n^2/4/2 - n/2/2) if what I said is true
+-- works for 4x4 case
+
+-- triangular instances have a different inverse.
+-- I'm not sure I even need to enforce that lower layers are triangular too
+-- in the sense of
+-- instance (Triangular a) => Division Ring (Tri a)
+-- Necessary or not?
+data BaseTri a = BaseTri a a a
+-- because then we'll use a pretty decent seeming blockwise triangular inversion
+
+-- LU Deocmpostion , not sure if constraint is necessary
+class Triangular l, Triangular u, Semiring m, Semiring u, Semiring l <= LU m l u | m -> l u where
+   lu :: m -> Tuple l u
+
+instance Triangular m, Semiring m => LU m m m where
+   lu m = Tuple one m 
+instance LU m l u => Semiring m => LU (M2 m) (Tri l) (Tri u) where -- use Dottable since we don't need lb ub
+   lu (M2 a b c d) = Tuple (Tri (M2 one b * dinv zero one)) (Tri (M2 schur zero zero d)) -- Kind of except we need to keep l on left and b on right
+                      Tuple la ua = lu a
+                      Tuple lb ub = lu b
+                      Tuple lc uc = lu c
+                      Tuple ld ud = lu d
+-- schur formula plus interleaving.
+instance Dottable a b a => Dottable (M2 a) (Tri b) (M2 a)
+
+
+
+
+zorder :: Int -> Int -> Int
+zorder x y | x == 0 && y == 0 = 0 
+zorder x y  = (mod x 2) + 2 * (mod y 2) + 4 * (zorder (shr x 1) (shr y 1))
+
+unzorder :: Int -> Tuple Int Int
+unzorder z = Tuple (z mod 2) (z mod 4)    
+
+bits :: Int -> List Bit
+ints :: List Bits -> Int
+-- Functor instance for Pair a a
+applypair f (Tuple x y) = Tuple (f x) (f y)
+
+splitlist (x : y : zs) = Tuple (x : xs) (y : ys) where
+                                          Tuple xs ys = splitlist zs
+
+
+zorder = applypair $ splitListist <<< bits 
+
+
+--data FreeSemiRing a = Pure a | One | Zero | Add (SemiRingMemo a) (SemiRingMemo a) | Mul (SemiRingMemo a) (SemiRingMemo a)
+data FreeSemiRing a = One | Zero | Add a (SemiRingMemo a) | Mul a (SemiRingMemo a)
+--data FreeSemiRing f a = Pure (f a) | One | Zero | Add (SemiRingMemo f a) (SemiRingMemo f a) | Mul (SemiRingMemo f a) (SemiRingMemo f a)
+-- Now this is a pure semiring functor, that automatically makes something a semiring with no particular assumptions about a.
+-- instance free
+-- if a is a semiring also, we can easily interpet all of this in an bovious manner
+-- Might just want this. Since often would rather just perform additions and multiplications on base type then keep expanded guy around
+data FreeSemiRing' a = Pure' a | One | Zero 
+
+-- Similar to hoe List = FreeMonoid
+-- This has two kinds of Nil, One and Zero, and two Cons, Add and Mul
+-- might conceivably attemmpt to support factoring
+
+type CPSFreeSemiRing a = forall b. (SemiRing b) => (a -> b) -> b 
+
+{-
+data HList x xs = HList x xs
+
+class Zip ass bss as bs a b | a b as bs -> ass bss where
+  zip :: ass -> bss -> TTuple  ??????
+
+instance Zip as bs => Zip (Tuple a as) (Tuple b bs) where
+   zip (Tuple a as) (Tuple b bs) = Tuple (Tuple a b) (zip as bs)
+instance Zip Unit Unit where
+   zip _ _ = unit
+
+instance UnZip xs => UnZip (Tuple (Tuple a b) xs) where
+   unzip (Tuple (Tuple a b) xs) = Tuple (Tuple a as) (Tuple b bs) where
+                                                     Tuple as bs = unzip xs
+-}
 
 --unzorder gives bits
 

@@ -37,6 +37,8 @@ mstep' pa pinv ainvn = pinv + pinv * pa * ainvn
 
 -- Useful for seeing these algorithms
 data Expr = Lit String | Plus Expr Expr | Times Expr Expr | Inv Expr | Sub Expr Expr | One | Zero
+-- this is Free FreeSemiRing String
+data FreeSemiRing a = Pure a | One | Zero | Add (SemiRingMemo a) (SemiRingMemo a) | Mul (SemiRingMemo a) (SemiRingMemo a)
 
 instance showExpr :: Show Expr where
    show (Lit x) = x
