@@ -58,6 +58,15 @@ type M1024 a = (Compose M2 M512) a
 type M2048 a = (Compose M2 M1024) a
 
 
+-- alternative formaultion
+type N2 f a = (Compose f f) a
+type N3 f a = (Compose f N2) a
+
+type V4' a = N2 V2 a
+type V8' a = N3 V2 a
+
+
+
 instance functorM2 :: Functor M2 where
    map f (M2 x y z w) = M2 (f x) (f y) (f z) (f w)
 
@@ -85,6 +94,7 @@ mK i j | i == j = 2
 mK _ _ = 0
 
 -- https://graphics.stanford.edu/~seander/bithacks.html
+-- morton ordering
 class ZOrder a where
   zorder :: Int -> Int -> a
   zorder :: (List Boolean) -> (List Boolean) -> a
@@ -190,6 +200,9 @@ data FreeSemiRing' a = Pure' a | One | Zero
 -- Similar to hoe List = FreeMonoid
 -- This has two kinds of Nil, One and Zero, and two Cons, Add and Mul
 -- might conceivably attemmpt to support factoring
+
+-- SemiRingSignature a = Add a a | Mul a a | One | Zero
+-- FreeSemiRing = Free SemiRingSignature
 
 type CPSFreeSemiRing a = forall b. (SemiRing b) => (a -> b) -> b 
 

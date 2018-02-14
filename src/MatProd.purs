@@ -24,6 +24,8 @@ class Metric p g f | p g -> f where
   mtabulate :: forall a. Semiring a => (g a -> f a) -> p a
   mindex :: forall a. Semiring a => p a -> (g a -> f a) 
 
+-- why even do this at the functor level?
+
 
 -- Metric f f Id => MetricKmett f where
 -- MetricKmett f => Metric f f Id

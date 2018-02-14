@@ -758,6 +758,94 @@ plus _ _ = VNum 0.0
 -}
 --inv :: Mat -> Mat
 
+-- The Idea is that whenever you need a vector or produce a vector, just dump it into a global store and reference it by Index
+-- probably shouldn't be array. Seq maybe
+data VectorStore f a = VectorStore (Array (f a)) (FreeSemiRing Int)  
+-- f might be for example Kron psi Kron psi Kron psi Kron psi Kron psi
+
+data ShareableState f a = SharableState (Seq a) (f Int)
+data SharingFunctor f a = SharableState (Seq a) (f Int) -- maybe keep a ref count in Seq (Int, a)
+instance Functor (SharingFunctor f) where
+  fmap f (SharableState x y) = SharableState (fmap f x) y
+
+-- this does match the store comonad
+
+-- ~ Store (Seq a) Int
+-- in the sense that Seq a ~ Int -> a
+-- Then Really SHareableState ~ StoreT? Noooo. Not so much
+-- and my intended use seems very stateful. s->(s,a)
+
+
+instance Something f => Monad (SharingFunctor f) where -- applicative probably. searching all of f for index changes
+   bind = -- do what you gotta do in f then lookup the value you need in Seq, if you destroy the last reference, then delete (or replace).
+-- Also a way to tie the knot. If Seq holds references to locations in f itself.
+
+-- basically some kind of state monad?
+
+
+
+data VectorStore vec = SharableStore FreeSemiRing (vec)
+
+
+instance Monad (VectorStore f) where
+   bind = 
+
+instance Semiring (f a) => Semiring (VectorStore f a) where
+  add =
+  one = 
+
+
+-- BTW Did I mention somehwere around here
+-- That 
+newtype UnitIntervalVec steps a = UnitIntervalVec (Number -> a)
+-- or 
+
+newtype RiemannVec domain steps a = RiemannVec (Number -> a)
+
+-- There is a linear map 
+forall domain steps. RiemannVec domain steps -> AVec steps
+
+data InfDomain
+data UnitInterval
+data Chebyshev -- sample at chebyshev points
+similarityInfUnit :: forall steps. RiemannVec InfDomain steps Number -> RiemannVec UnitInterval steps Number
+similarityInfUnit (RiemannVec f) = RiemannVec (f <<< arctan)
+
+-- should the change of variables factor be put on all Dual and otherwise
+-- a sqaure root sharing? Or only on original? 
+
+similarityInfUnit :: forall steps. Dual (RiemannVec InfDomain steps Number) -> Dual (RiemannVec UnitInterval steps Number)
+similarityInfUnit (Dual f) = Dual \v -> (f (v * \x -> 1/(1+x*x))
+
+similarityUnitInf :: forall steps. RiemannVec InfDomain steps Number -> RiemannVec UnitInterval steps Number
+similarityInfUnit (RiemannVec f) = RiemannVec (f <<< arctan)
+
+similarity2 :: forall steps. RiemannVec UnitInterval steps Number -> RiemannVec Chebyshev steps Number
+similarity2 (RiemannVec f) = RiemannVec (f <<< arccos)
+
+-- Kronning of Riemann vectors for 3d space for exmaple is reasonable
+-- but so is composition
+-- does the integration routine compose?
+
+-- what about 
+
+instance SemiRing a => SemiRing (Random a) where
+   x * y = liftA2 (*) x y
+-- oh. Actually this comes in under the auspices that all applicatives of semirings are semirings.
+-- this is not in the prelude. Huh. That really screws me over.
+
+
+MCRiemannVec a = RiemannVec UnitInterval RANDOM (Random a) 
+
+-- use bind to take Random pos >>= (pos -> Random a)
+
+type Random a = Eff (random :: RANDOM) a
+
+
+
+
+
+
 
 
 
