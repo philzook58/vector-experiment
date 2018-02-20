@@ -121,14 +121,45 @@ instance recursiveZOrder :: ZOrder a => ZOrder (Tuple (Tuple Boolean Boolean) a)
 -- FFT suggests that perhaps circulant matrices are also block circulant.
 -- Looks like it
 
+class Toeplitz f g where
+   toeplitz :: f -> g
+
+toeplitz (V2 x y) = M2 (toeplitz x) (toeplitz y) (toeplitz y) (toeplitz x)
+
+class Diag f g where
+  diag :: f -> g
+
+diag (V2 x y) = M2 (diag x) zero zero (diag y)
+
+class Circulant f g where
+  circ :: f -> g
+
+newtype Circulant f a = Circulant (f a)
+
+class Onto where
+  to :: 
+
+instance Dottable (Circulant V2 a) (M2 a) (M2 a)
+
+instance Dottable (Circulant V2 a) (Circulant V2 a) (Circulant V2 a) where
+  dot = --use FFT, 
+
+
+circ x = toeplitz x (reverse x)
+
+class Transposable f where
+  transpose (M2 a b c d) = M2 (tranpose a) (transpose c) (transpose b) (transpose d)
+
 -- one way to encode
 data M2' tag a = M2' a a a a 
 data Triangular
 data Banded
+
 -- or basically equvialently
 newtype Tri a = Tri (M2 a)
 -- Tri' for lower triangular?
 newtype Circ a = Circ (M2 a)
+
 -- Both cases have lots of obvious helpful boys
 -- circulant is described by a single vector
 -- diagonal blocks are identical
@@ -149,6 +180,7 @@ newtype Circ a = Circ (M2 a)
 -- instance (Triangular a) => Division Ring (Tri a)
 -- Necessary or not?
 data BaseTri a = BaseTri a a a
+data Symmettric a = Sym a a a
 -- because then we'll use a pretty decent seeming blockwise triangular inversion
 
 -- LU Deocmpostion , not sure if constraint is necessary
@@ -372,3 +404,5 @@ instance semiringM2 :: (Semiring a) => Semiring (M2 a) where
    mul (M2 x y z w) (M2 a b c d) = M2 (x*a+y*c) (x*b+y*d) (z*a+w*c) (z*b+w*d)  -- Could use strassen
    one = M2 one zero zero one
 
+
+class DeCompose where 

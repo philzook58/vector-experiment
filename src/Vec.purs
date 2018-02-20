@@ -842,6 +842,8 @@ MCRiemannVec a = RiemannVec UnitInterval RANDOM (Random a)
 type Random a = Eff (random :: RANDOM) a
 
 
+-- Foldable1 and UnFoldable1
+-- traverse down the type hierarchy
 
 
 
